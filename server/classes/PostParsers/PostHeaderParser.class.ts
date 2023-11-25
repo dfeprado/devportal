@@ -1,4 +1,4 @@
-import { PostHeader } from "./Post.interfaces";
+import { PostHeader } from "~/interfaces/Post.interfaces";
 import { PostReader } from "./PostReader.interface";
 
 export class PostHeaderParser {

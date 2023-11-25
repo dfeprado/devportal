@@ -1,7 +1,7 @@
 import { Token, TokensList, lexer, parser } from "marked";
 import { PostHeaderParser } from "./PostHeaderParser.class";
-import { ParsedPost, TocEntry } from "./Post.interfaces";
 import { PostReader } from "./PostReader.interface";
+import { ParsedPost, TocEntry } from "~/interfaces/Post.interfaces";
 
 export class PostParser {
     private headerParser: PostHeaderParser;

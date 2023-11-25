@@ -1,3 +1,8 @@
+export interface Post {
+    slug: string;
+    header: PostHeader;
+}
+
 export interface TocEntry {
     title: string;
     depth: number;
