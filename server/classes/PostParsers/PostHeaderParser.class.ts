@@ -1,23 +1,17 @@
-import { Readable } from "stream";
+import { PostHeader } from "./Post.interfaces";
+import { PostReader } from "./PostReader.interface";
 
 export class PostHeaderParser {
-    private _bufferAfterHeader = '';
-    private readonly expectHeaderOnFirstNBytes = 4096;
-    private readonly headerBytesRead = 256;
     private header?: PostHeader;
 
-    constructor(private readonly content: Readable) { }
+    constructor(private readonly reader: PostReader) { }
 
-    get remainingBufferAfterHeader(): string {
-        return this._bufferAfterHeader;
-    }
-
-    parse(): PostHeader {
+    async parse(): Promise<PostHeader> {
         if (this.header) {
             return this.header!;
         }
 
-        const rawHeader = this.parseRawHeader();
+        const rawHeader = await this.parseHeaderRaw();
         this.checkMandatoryHeaderTags(rawHeader);
         const authorParts = this.splitAuthorNameAndEmail(rawHeader);
         this.createHeader(rawHeader, authorParts);
@@ -25,8 +19,10 @@ export class PostHeaderParser {
         return this.header!;
     }
 
-    private parseRawHeader(): Record<string, string> {
-        return this.readHeader()
+    private async parseHeaderRaw(): Promise<Record<string, string>> {
+        const textHeader = await this.reader.readHeader();
+        
+        return textHeader
             .split('\n')
             .map((row, idx) => {
                 row = row.trim();
@@ -46,33 +42,6 @@ export class PostHeaderParser {
 
                 return rawHeader;
             }, <Record<string, string>>{});
-    }
-
-    private readHeader(): string {
-        let headerContent = '';
-        let readContent: Buffer;
-        let endOfHeaderIdx: number = -1;
-
-        while ((readContent = this.content.read(this.headerBytesRead)) !== null) {
-            headerContent += readContent.toString();
-
-            if (headerContent.length >= this.expectHeaderOnFirstNBytes) {
-                throw new Error("Header wasn't found withing the first 4096 bytes of the file.");
-            }
-
-            endOfHeaderIdx = headerContent.indexOf('---');
-            if (endOfHeaderIdx !== -1) {
-                this._bufferAfterHeader = headerContent.substring(endOfHeaderIdx + 3);
-                headerContent = headerContent.substring(0, endOfHeaderIdx);
-                break;
-            }
-        }
-
-        if (endOfHeaderIdx === -1) {
-            throw new Error('Header not found on the entire file');
-        }
-
-        return headerContent;
     }
 
     private checkMandatoryHeaderTags(rawHeader: Record<string, string>): void {
@@ -100,13 +69,4 @@ export class PostHeaderParser {
 
         Object.freeze(this.header);
     }
-}
-
-export interface PostHeader {
-    title: string;
-    author: {
-        name: string;
-        email: string;
-    };
-    tags: string[] | null;
 }

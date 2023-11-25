@@ -1,16 +1,16 @@
 import { PostParser } from "./PostParser.class";
-import { TestPost } from "./PostStreamBuilder.test-class.test";
+import { MockPostReader } from "./MockPostReader.test-class.test";
 
 describe('Post Parser', () => {
-    test('Parse a post', () => {
-        const content = new TestPost(`
+    test('Parse a post', async () => {
+        const post = new MockPostReader(`
 title: My Content
 author: Author <author@email.com>
 tags: tag 1, tag 2, tag 3,tag4,
 ---
 A simple content`);
 
-        const parsedContent = new PostParser(content).parse()
+        const parsedContent = await new PostParser(post).parse()
 
         expect(parsedContent.header.title).toBe('My Content')
         expect(parsedContent.header.author.name).toBe('Author')
@@ -21,8 +21,8 @@ A simple content`);
         expect(parsedContent.body).toBe('<p>A simple content</p>\n')
     })
 
-    test('Parse table of contents (toc)', () => {
-        const content = new TestPost(`
+    test('Parse table of contents (toc)', async () => {
+        const content = new MockPostReader(`
 title: My Content
 author: Author <author@email.com>
 ---
@@ -39,7 +39,7 @@ Text
 
 Text`)
 
-        const parsedContent = new PostParser(content).parse();
+        const parsedContent = await new PostParser(content).parse();
         expect(parsedContent.toc).not.toBeNull();
         expect(parsedContent.toc!).toHaveLength(6);
         expect(parsedContent.toc![0]).toEqual({ title: 'Introduction', depth: 1 });
@@ -50,15 +50,15 @@ Text`)
         expect(parsedContent.toc![5]).toEqual({ title: 'Second sub-subheader', depth: 3 });
     })
 
-    test('Empty post with header should be ok', () => {
-        const content = new TestPost(
+    test('Empty post with header should be ok', async () => {
+        const content = new MockPostReader(
 `title: My Post
 author: Author <author@email.com>
 tags: tag1
 ---`
         );
 
-        const parsedContent = new PostParser(content).parse();
+        const parsedContent = await new PostParser(content).parse();
         expect(parsedContent.toc).toBeNull();
         expect(parsedContent.body).toBe('');
     });
